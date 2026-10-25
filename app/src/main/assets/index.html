@@ -194,6 +194,11 @@ header{position:relative;z-index:2;width:100%;display:flex;align-items:center;ju
 .notif .x{font-size:22px;color:var(--muted);padding:0 4px}
 @media (orientation:landscape){.notif{left:auto;right:5vw;width:min(46vw,460px);top:3vh}}
 
+/* Control remoto (TV / TV box): resalta el botón seleccionado */
+button:focus{outline:none}
+button:focus-visible,input:focus-visible{outline:4px solid var(--yellow);outline-offset:6px;filter:drop-shadow(0 0 12px rgba(249,200,14,.8))}
+.big:focus-visible{outline-offset:10px}
+
 /* ===== Pantallas horizontales (radios de auto, tablets) ===== */
 @media (orientation:landscape){
   #intro .sun{width:56vh;height:56vh}
@@ -224,6 +229,13 @@ header{position:relative;z-index:2;width:100%;display:flex;align-items:center;ju
   .side{width:48px;height:48px}
   .marquee span{font-size:22px}
   .artist{font-size:20px}
+}
+
+/* Televisores grandes: agranda textos y botones para verlos desde el sillón */
+@media (orientation:landscape) and (min-width:1400px){
+  .info,.eq,.controls,.vol{zoom:1.7}
+  header,.status{zoom:1.6}
+  .notif{zoom:1.5}
 }
 </style>
 </head>
@@ -456,7 +468,10 @@ header{position:relative;z-index:2;width:100%;display:flex;align-items:center;ju
     if (A) A.share(txt);
   });
   var sheet = $("sheet");
-  $("bSleep").addEventListener("click", function(){ sheet.classList.add("show"); });
+  $("bSleep").addEventListener("click", function(e){
+    sheet.classList.add("show");
+    if (e.detail === 0) setTimeout(function(){ sheet.querySelector(".opts button").focus(); }, 50); // abierto con el control
+  });
   sheet.addEventListener("click", function(e){ if (e.target === sheet) sheet.classList.remove("show"); });
   Array.prototype.forEach.call(document.querySelectorAll(".opts button"), function(btn){
     btn.addEventListener("click", function(){
@@ -474,6 +489,39 @@ header{position:relative;z-index:2;width:100%;display:flex;align-items:center;ju
     var t = $("toast"); t.textContent = msg; t.classList.add("show");
     clearTimeout(tt); tt = setTimeout(function(){ t.classList.remove("show"); }, 2200);
   }
+
+  /* ---------- Control remoto: flechas para moverse, OK para elegir ---------- */
+  function focusables(){
+    var root = sheet.classList.contains("show") ? sheet : $("app").parentNode;
+    return Array.prototype.filter.call(root.querySelectorAll("button,input"), function(el){
+      if (el.closest("#intro")) return false;
+      if (!sheet.classList.contains("show") && el.closest("#sheet")) return false;
+      var r = el.getBoundingClientRect();
+      return r.width > 0 && r.height > 0;
+    });
+  }
+  var DIRS = {ArrowUp:[0,-1], ArrowDown:[0,1], ArrowLeft:[-1,0], ArrowRight:[1,0]};
+  document.addEventListener("keydown", function(e){
+    if (!started && (e.key === "Enter" || e.key === " ")) { p = 100; return; }
+    var d = DIRS[e.key];
+    if (!d) return;
+    var a = document.activeElement;
+    if (a && a.type === "range" && d[0] !== 0) return; // izquierda/derecha mueven el volumen
+    var list = focusables();
+    if (!list.length) return;
+    e.preventDefault();
+    if (!a || list.indexOf(a) < 0) { (sheet.classList.contains("show") ? list[0] : $("bPlay")).focus(); return; }
+    var ra = a.getBoundingClientRect(), ax = ra.left + ra.width/2, ay = ra.top + ra.height/2, best = null, bs = 1e9;
+    list.forEach(function(el){
+      if (el === a) return;
+      var r = el.getBoundingClientRect(), x = r.left + r.width/2 - ax, y = r.top + r.height/2 - ay;
+      var along = x*d[0] + y*d[1];
+      if (along <= 4) return;
+      var sc = along + (Math.abs(x*d[1]) + Math.abs(y*d[0])) * 2;
+      if (sc < bs) { bs = sc; best = el; }
+    });
+    if (best) best.focus();
+  });
 
   /* ---------- Aviso de notificaciones desactivadas ---------- */
   var notifOn = true, notifHidden = false;
