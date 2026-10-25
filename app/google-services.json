@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "531531964817",
+    "project_id": "radio-recuerdos-retro-f0167",
+    "storage_bucket": "radio-recuerdos-retro-f0167.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:531531964817:android:ed165116fae3bb350a7a30",
+        "android_client_info": {
+          "package_name": "cl.radiorecuerdos.retro"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCBmrhlE60DC1RGIEeM7okT2X1Cr0EAmNs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

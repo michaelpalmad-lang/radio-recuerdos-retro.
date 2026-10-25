@@ -7,8 +7,10 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.media.AudioManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.view.KeyEvent
 import android.webkit.JavascriptInterface
 import android.webkit.WebSettings
@@ -16,6 +18,7 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
@@ -60,6 +63,7 @@ class MainActivity : AppCompatActivity() {
                 pageReady = true
                 pushState()
                 pushVolume()
+                pushNotif()
             }
         }
         web.loadUrl("file:///android_asset/index.html")
@@ -78,7 +82,18 @@ class MainActivity : AppCompatActivity() {
             requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 7)
         }
 
+        PushService.setup(this)
         connect()
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        pushNotif()
+    }
+
+    private fun pushNotif() {
+        val on = NotificationManagerCompat.from(this).areNotificationsEnabled()
+        js("window.onNotif && window.onNotif($on)")
     }
 
     private fun connect() {
@@ -103,6 +118,7 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
         pushState()
         pushVolume()
+        pushNotif()
     }
 
     override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
@@ -187,6 +203,19 @@ class MainActivity : AppCompatActivity() {
         fun refresh() = runOnUiThread {
             pushState()
             pushVolume()
+        }
+
+        @JavascriptInterface
+        fun openNotifSettings() = runOnUiThread {
+            val i = if (Build.VERSION.SDK_INT >= 26) {
+                Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                    .putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
+            } else {
+                Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName"))
+            }
+            try { startActivity(i) } catch (_: Exception) {
+                startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName")))
+            }
         }
 
         @JavascriptInterface

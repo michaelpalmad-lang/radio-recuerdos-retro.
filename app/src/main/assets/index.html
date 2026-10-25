@@ -184,6 +184,16 @@ header{position:relative;z-index:2;width:100%;display:flex;align-items:center;ju
 
 @media (orientation:portrait) and (max-height:640px){.stage{width:min(62vw,250px);margin-top:2vh}.big{width:80px;height:80px}.eq{display:none}}
 
+/* Aviso para activar notificaciones */
+.notif{position:fixed;left:12px;right:12px;top:calc(env(safe-area-inset-top) + 66px);z-index:20;display:none;align-items:center;gap:10px;
+  padding:10px 12px;background:#000;border:2px solid var(--yellow);box-shadow:4px 4px 0 var(--pink);font-family:var(--crt);font-size:19px;line-height:1.1}
+.notif.show{display:flex;animation:drop .35s ease-out}
+@keyframes drop{from{transform:translateY(-14px);opacity:0}}
+.notif span{flex:1}
+.notif .go{font-family:var(--pixel);font-size:9px;padding:9px 10px;background:var(--yellow);color:#3a0a5a;box-shadow:2px 2px 0 var(--pink)}
+.notif .x{font-size:22px;color:var(--muted);padding:0 4px}
+@media (orientation:landscape){.notif{left:auto;right:5vw;width:min(46vw,460px);top:3vh}}
+
 /* ===== Pantallas horizontales (radios de auto, tablets) ===== */
 @media (orientation:landscape){
   #intro .sun{width:56vh;height:56vh}
@@ -297,6 +307,11 @@ header{position:relative;z-index:2;width:100%;display:flex;align-items:center;ju
       <button data-m="60">1 hora</button><button data-m="90">1½ hora</button><button data-m="0" class="off">Quitar</button>
     </div>
   </div>
+</div>
+<div class="notif" id="notif">
+  <span>🔔 Activa los avisos de la radio</span>
+  <button class="go" id="nGo">ACTIVAR</button>
+  <button class="x" id="nX" aria-label="Cerrar">✕</button>
 </div>
 <div class="toast" id="toast"></div>
 
@@ -459,6 +474,17 @@ header{position:relative;z-index:2;width:100%;display:flex;align-items:center;ju
     var t = $("toast"); t.textContent = msg; t.classList.add("show");
     clearTimeout(tt); tt = setTimeout(function(){ t.classList.remove("show"); }, 2200);
   }
+
+  /* ---------- Aviso de notificaciones desactivadas ---------- */
+  var notifOn = true, notifHidden = false;
+  window.onNotif = function(on){ notifOn = !!on; showNotif(); };
+  function showNotif(){
+    var hide = notifOn || notifHidden || !started;
+    $("notif").classList.toggle("show", !hide);
+  }
+  $("nGo").addEventListener("click", function(){ if (A) A.openNotifSettings(); });
+  $("nX").addEventListener("click", function(){ notifHidden = true; showNotif(); });
+  setInterval(showNotif, 1500);
 
   render();
   if (A) A.refresh();
