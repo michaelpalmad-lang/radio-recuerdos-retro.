@@ -1,0 +1,7 @@
+<resources>
+    <style name="Theme.RadioRetro" parent="Theme.AppCompat.NoActionBar">
+        <item name="android:statusBarColor">#120624</item>
+        <item name="android:navigationBarColor">#120624</item>
+        <item name="android:windowBackground">#120624</item>
+    </style>
+</resources>
