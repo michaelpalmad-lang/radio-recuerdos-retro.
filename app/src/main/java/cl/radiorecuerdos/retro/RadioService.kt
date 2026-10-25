@@ -44,8 +44,11 @@ class RadioService : MediaSessionService() {
         const val SLOGAN = "En vivo · Clásicos de los 80 y 90"
 
         // Fuentes de información del tema actual (panel SonicPanel / Shoutcast del servidor).
+        // Mismo servidor que usa el reproductor de recuerdosretro.com (Shoutcast 2, puerto 7175, id 1).
         val INFO_URLS = listOf(
+            "https://sonic.portalfoxmix.cl:7175/stats?sid=1&json=1",
             "https://sonic.portalfoxmix.cl/cp/get_info.php?p=8226",
+            "https://sonic.portalfoxmix.cl:7175/currentsong?sid=1",
             "https://sonic.portalfoxmix.cl/8226/stats?json=1"
         )
 
@@ -329,7 +332,13 @@ class RadioService : MediaSessionService() {
     private fun readPanel(): Pair<String, String?>? {
         for (u in INFO_URLS) {
             try {
-                val body = httpGet(u) ?: continue
+                val body = httpGet(u)?.trim() ?: continue
+                if (body.isEmpty()) continue
+                if (!body.startsWith("{")) {
+                    // currentsong entrega solo el texto "Artista - Tema".
+                    if (body.length < 200 && !body.startsWith("<")) return Pair(htmlDecode(body), null)
+                    continue
+                }
                 val j = JSONObject(body)
                 val t = listOf("title", "songtitle", "currentsong", "song")
                     .map { j.optString(it, "") }
