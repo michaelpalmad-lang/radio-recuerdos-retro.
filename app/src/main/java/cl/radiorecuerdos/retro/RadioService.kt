@@ -24,6 +24,7 @@ import androidx.media3.session.SessionCommand
 import androidx.media3.session.SessionResult
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
+import com.google.firebase.analytics.FirebaseAnalytics
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
@@ -73,6 +74,23 @@ class RadioService : MediaSessionService() {
     private var pausedAt = 0L
     private var retries = 0
     private var defaultArt: ByteArray? = null
+    private var listenStart = 0L
+    private val analytics by lazy { FirebaseAnalytics.getInstance(this) }
+
+    /** Estadísticas en Firebase Analytics: cuándo se escucha y cuánto tiempo. */
+    private fun logListen(playing: Boolean) {
+        try {
+            if (playing && listenStart == 0L) {
+                listenStart = SystemClock.elapsedRealtime()
+                analytics.logEvent("reproducir", null)
+            } else if (!playing && listenStart > 0L) {
+                val min = (SystemClock.elapsedRealtime() - listenStart) / 60_000L
+                listenStart = 0L
+                analytics.logEvent("sesion_escucha", Bundle().apply { putLong("minutos", min) })
+            }
+        } catch (_: Exception) {
+        }
+    }
 
     override fun onCreate() {
         super.onCreate()
@@ -103,6 +121,7 @@ class RadioService : MediaSessionService() {
             override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
                 if (!playWhenReady) pausedAt = SystemClock.elapsedRealtime()
                 else pollNow()
+                logListen(playWhenReady)
             }
 
             override fun onIsPlayingChanged(isPlaying: Boolean) {
@@ -166,6 +185,7 @@ class RadioService : MediaSessionService() {
     }
 
     override fun onDestroy() {
+        logListen(false)
         main.removeCallbacksAndMessages(null)
         io.shutdownNow()
         session?.run {

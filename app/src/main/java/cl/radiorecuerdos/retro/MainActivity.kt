@@ -25,6 +25,7 @@ import androidx.media3.common.Player
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
 import com.google.common.util.concurrent.ListenableFuture
+import com.google.firebase.analytics.FirebaseAnalytics
 import org.json.JSONObject
 
 /**
@@ -39,6 +40,10 @@ class MainActivity : AppCompatActivity() {
     private var controller: MediaController? = null
     private var pendingPlay = false
     private var pageReady = false
+
+    private fun log(event: String, params: Bundle? = null) {
+        try { FirebaseAnalytics.getInstance(this).logEvent(event, params) } catch (_: Exception) {}
+    }
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -189,6 +194,7 @@ class MainActivity : AppCompatActivity() {
 
         @JavascriptInterface
         fun sleep(minutes: Int) = runOnUiThread {
+            log("temporizador", Bundle().apply { putLong("minutos", minutes.toLong()) })
             controller?.sendCustomCommand(RadioService.CMD_SLEEP, Bundle().apply { putInt("min", minutes) })
         }
 
@@ -207,6 +213,7 @@ class MainActivity : AppCompatActivity() {
 
         @JavascriptInterface
         fun openNotifSettings() = runOnUiThread {
+            log("activar_avisos")
             val i = if (Build.VERSION.SDK_INT >= 26) {
                 Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
                     .putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
@@ -220,6 +227,7 @@ class MainActivity : AppCompatActivity() {
 
         @JavascriptInterface
         fun share(text: String) = runOnUiThread {
+            log("compartir_tema")
             val send = Intent(Intent.ACTION_SEND).apply {
                 type = "text/plain"
                 putExtra(Intent.EXTRA_TEXT, text)

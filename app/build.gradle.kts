@@ -47,4 +47,5 @@ dependencies {
     implementation("androidx.media3:media3-session:1.4.1")
     implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
     implementation("com.google.firebase:firebase-messaging")
+    implementation("com.google.firebase:firebase-analytics")
 }
