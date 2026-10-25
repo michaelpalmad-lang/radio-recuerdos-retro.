@@ -182,7 +182,39 @@ header{position:relative;z-index:2;width:100%;display:flex;align-items:center;ju
   background:#000;border:2px solid var(--lime);color:var(--lime);padding:10px 14px;box-shadow:4px 4px 0 var(--pink);white-space:nowrap}
 .toast.show{opacity:1;transform:translate(-50%,0)}
 
-@media (max-height:640px){.stage{width:min(62vw,250px);margin-top:2vh}.big{width:80px;height:80px}.eq{display:none}}
+@media (orientation:portrait) and (max-height:640px){.stage{width:min(62vw,250px);margin-top:2vh}.big{width:80px;height:80px}.eq{display:none}}
+
+/* ===== Pantallas horizontales (radios de auto, tablets) ===== */
+@media (orientation:landscape){
+  #intro .sun{width:56vh;height:56vh}
+  .logo{margin-top:5vh}
+  .logo .l1{font-size:13vh}
+  .logo .l2{font-size:9vh}
+  .logo .l3{font-size:12vh}
+  .cassette{width:auto;height:27vh;margin-bottom:3vh;padding:2.2vh 2vh 0}
+  .cassette .label::before{display:none}
+  .loading{margin-bottom:6vh;width:min(50vw,420px)}
+  .tap{bottom:1.5vh}
+
+  #app{display:grid;grid-template-columns:auto 1fr;column-gap:5vw;
+    grid-template-rows:auto 1fr auto auto auto auto 1fr auto;
+    justify-items:center;align-items:center;padding:3vh 5vw}
+  header{grid-column:1/-1;grid-row:1}
+  .stage{grid-column:1;grid-row:2/9;width:min(40vw,74vh);margin:0}
+  .info{grid-column:2;grid-row:3;margin:0;max-width:52vw}
+  .eq{grid-column:2;grid-row:4;margin-top:2vh}
+  .controls{grid-column:2;grid-row:5;margin-top:2.5vh}
+  .vol{grid-column:2;grid-row:6;margin-top:3vh;width:min(42vw,420px)}
+  .status{grid-column:2;grid-row:8;margin:0}
+  .gridfloor{height:40%}
+}
+@media (orientation:landscape) and (max-height:480px){
+  .eq{display:none}
+  .big{width:76px;height:76px}
+  .side{width:48px;height:48px}
+  .marquee span{font-size:22px}
+  .artist{font-size:20px}
+}
 </style>
 </head>
 <body>
