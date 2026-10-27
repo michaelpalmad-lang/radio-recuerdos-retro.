@@ -180,7 +180,7 @@ details .box{margin-top:10px}
     <button class="link" id="bLogout">Salir</button>
   </section>
 
-  <div class="foot">Los avisos llegan a todos los que tienen la app instalada, en pocos segundos o minutos.</div>
+  <div class="foot">Los avisos llegan a todos los que tienen la app instalada, en pocos segundos o minutos.<br><span id="ver" style="opacity:.7">versión 1.0</span></div>
 </div>
 
 <!-- Confirmación / resultado -->
@@ -332,6 +332,18 @@ details .box{margin-top:10px}
       return '<li><div class="t"><b>' + esc(x.t) + '</b><span>' + esc(x.b) + '</span></div><time>' + when + '</time></li>';
     }).join("");
   }
+
+  /* ---------- Versión (contador discreto) ---------- */
+  fetch("https://api.github.com/repos/michaelpalmad-lang/radio-recuerdos-retro./releases?per_page=100")
+    .then(function(r){ return r.ok ? r.json() : []; })
+    .then(function(list){
+      var n = 0;
+      (list || []).forEach(function(r){
+        if (r.tag_name === "v1.4") return; // pruebas iniciales
+        (r.assets || []).forEach(function(a){ n += a.download_count || 0; });
+      });
+      if (n) $("ver").textContent = "versión 1." + n;
+    }).catch(function(){});
 
   function err(id, m){ var e = $(id); e.textContent = m; e.classList.toggle("show", !!m); }
   function esc(s){ return String(s).replace(/[&<>"']/g, function(c){ return { "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]; }); }
