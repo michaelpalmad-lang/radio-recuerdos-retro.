@@ -1,0 +1,12 @@
+# Panel "Enviar aviso" de Radio Recuerdos Retro
+# En Netlify: Base directory = panel-avisos
+[build]
+  publish = "public"
+  functions = "netlify/functions"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+    X-Frame-Options = "DENY"
+    Referrer-Policy = "no-referrer"

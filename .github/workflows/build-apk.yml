@@ -3,6 +3,8 @@ name: Compilar APK
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - 'panel-avisos/**'
   workflow_dispatch:
 
 permissions:

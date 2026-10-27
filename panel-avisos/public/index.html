@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#120624">
+<title>Enviar aviso · Radio Recuerdos Retro</title>
+<link rel="icon" href="img/icono.png">
+<link rel="apple-touch-icon" href="img/icono.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Monoton&family=Press+Start+2P&family=VT323&family=Bungee&family=Pacifico&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#120624; --card:#1d0b33; --card2:#24103e; --line:#3c1d62;
+  --pink:#ff2a8c; --cyan:#05d9e8; --yellow:#f9c80e; --lime:#7cff4f;
+  --ink:#fff; --muted:#c9b6e8; --err:#ffb347;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif;font-size:16px}
+body{min-height:100vh;background:
+  radial-gradient(circle at 50% -10%,rgba(255,42,140,.35),transparent 55%),
+  linear-gradient(180deg,#1a0636,#120624 60%)}
+button,input,textarea{font:inherit;color:inherit}
+.wrap{max-width:520px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 18px) 16px calc(env(safe-area-inset-bottom) + 28px)}
+
+/* Encabezado */
+.brand{text-align:center;line-height:1;margin:6px 0 18px}
+.brand .l1{font-family:Monoton,sans-serif;font-size:42px;color:#fff;text-shadow:0 0 6px #fff,0 0 16px var(--cyan),0 0 30px var(--cyan)}
+.brand .l2{font-family:Pacifico,cursive;font-size:26px;color:var(--pink);margin-top:2px;text-shadow:0 0 10px var(--pink)}
+.brand .tag{display:inline-block;margin-top:12px;font-family:'Press Start 2P',monospace;font-size:10px;color:var(--yellow);letter-spacing:.08em;text-shadow:2px 2px 0 #3a0a5a}
+
+.card{background:var(--card);border:2px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px}
+.label{display:flex;justify-content:space-between;align-items:baseline;font-weight:700;font-size:15px;margin-bottom:8px}
+.label small{font-weight:400;color:var(--muted);font-size:13px}
+.hint{font-size:14px;color:var(--muted);margin-top:6px;line-height:1.4}
+
+input[type=text],input[type=password],input[type=url],textarea{
+  width:100%;background:#0e041e;border:2px solid var(--line);border-radius:12px;padding:14px;font-size:17px;outline:none;transition:border-color .15s}
+input:focus,textarea:focus{border-color:var(--cyan)}
+textarea{min-height:110px;resize:vertical;line-height:1.4}
+::placeholder{color:#8f7bb0}
+
+/* Chips de ideas */
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.chip{border:1.5px solid var(--line);background:var(--card2);border-radius:30px;padding:8px 12px;font-size:14px;color:var(--muted);cursor:pointer}
+.chip:active{transform:scale(.97)}
+
+/* Imágenes */
+.imgs{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.opt{position:relative;border:3px solid var(--line);border-radius:12px;overflow:hidden;background:#0e041e;cursor:pointer;text-align:left;padding:0}
+.opt img{display:block;width:100%;aspect-ratio:2/1;object-fit:cover}
+.opt .none{aspect-ratio:2/1;display:grid;place-items:center;font-size:30px;color:var(--muted)}
+.opt span{display:block;padding:7px 9px;font-size:14px;font-weight:600}
+.opt.sel{border-color:var(--yellow);box-shadow:0 0 0 3px rgba(249,200,14,.25)}
+.opt.sel::after{content:"✓";position:absolute;top:6px;right:6px;width:26px;height:26px;border-radius:50%;background:var(--yellow);color:#3a0a5a;display:grid;place-items:center;font-weight:800}
+details{margin-top:12px}
+summary{cursor:pointer;color:var(--cyan);font-size:15px;font-weight:600;list-style:none}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"＋ "}
+details[open] summary::before{content:"－ "}
+details .box{margin-top:10px}
+
+/* Vista previa estilo Android */
+.preview{background:#202124;border-radius:18px;padding:14px;color:#e8eaed;font-family:Roboto,Inter,sans-serif}
+.pv-head{display:flex;align-items:center;gap:8px;font-size:13px;color:#bdc1c6}
+.pv-head img{width:22px;height:22px;border-radius:6px}
+.pv-title{font-weight:700;font-size:16px;margin-top:8px;word-break:break-word}
+.pv-body{font-size:15px;margin-top:3px;color:#d2d4d7;word-break:break-word;white-space:pre-wrap}
+.pv-img{margin-top:10px;border-radius:12px;width:100%;aspect-ratio:2/1;object-fit:cover;display:block;background:#111}
+
+/* Botones */
+.btn{width:100%;border:0;border-radius:16px;padding:18px;font-family:Bungee,sans-serif;font-size:20px;letter-spacing:.03em;cursor:pointer;color:#fff;
+  background:linear-gradient(#ff5aa8,var(--pink) 50%,#c0146a);border:3px solid #fff;box-shadow:0 6px 0 #5d0a3c,0 0 24px rgba(255,42,140,.5);transition:transform .08s,box-shadow .08s}
+.btn:active{transform:translateY(5px);box-shadow:0 1px 0 #5d0a3c}
+.btn[disabled]{opacity:.55;pointer-events:none}
+.btn.alt{background:#24103e;border-color:var(--line);box-shadow:none;font-size:17px}
+.link{background:none;border:0;color:var(--muted);text-decoration:underline;font-size:14px;cursor:pointer;margin:14px auto 0;display:block}
+.check{display:flex;align-items:center;gap:10px;margin-top:12px;font-size:15px;color:var(--muted)}
+.check input{width:22px;height:22px;accent-color:var(--pink)}
+
+.msg{border-radius:12px;padding:12px 14px;font-size:15px;margin-top:12px;display:none;line-height:1.4}
+.msg.show{display:block}
+.msg.err{background:rgba(255,179,71,.12);border:2px solid var(--err);color:#ffd59a}
+
+/* Modal de confirmación y resultado */
+.modal{position:fixed;inset:0;background:rgba(5,0,15,.75);display:none;align-items:flex-end;justify-content:center;z-index:20;padding:16px}
+.modal.show{display:flex}
+.sheet{width:100%;max-width:520px;background:var(--card);border:3px solid var(--pink);border-radius:20px;padding:22px 18px calc(env(safe-area-inset-bottom) + 18px);box-shadow:0 -6px 0 var(--cyan);text-align:center}
+.sheet h2{font-family:Bungee,sans-serif;font-size:22px;margin-bottom:8px}
+.sheet p{color:var(--muted);font-size:16px;margin-bottom:18px;line-height:1.4}
+.sheet .row{display:grid;grid-template-columns:1fr 1.4fr;gap:10px}
+.big-ok{font-size:64px;margin:4px 0 6px}
+.spin{width:54px;height:54px;border-radius:50%;border:6px dashed var(--yellow);margin:6px auto 14px;animation:sp 1.2s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* Historial */
+.hist{list-style:none}
+.hist li{display:flex;gap:10px;padding:10px 0;border-top:1px solid var(--line);font-size:14px}
+.hist li:first-child{border-top:0}
+.hist b{display:block;font-size:15px}
+.hist time{color:var(--muted);font-size:13px;white-space:nowrap}
+.hist .t{flex:1;min-width:0}
+.hist .t span{color:var(--muted);display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.empty{color:var(--muted);font-size:14px}
+
+.hidden{display:none !important}
+.foot{text-align:center;color:#7d6a9e;font-size:12px;margin-top:18px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand">
+    <div class="l1">RADIO</div>
+    <div class="l2">Recuerdos Retro</div>
+    <div class="tag">★ ENVIAR AVISO A LOS OYENTES ★</div>
+  </div>
+
+  <!-- ===== Entrada ===== -->
+  <section id="login">
+    <div class="card">
+      <div class="label">Contraseña</div>
+      <input type="password" id="pass" placeholder="Escribe la contraseña" autocomplete="current-password">
+      <label class="check"><input type="checkbox" id="remember" checked> Recordar en este teléfono</label>
+      <div class="msg err" id="loginErr"></div>
+    </div>
+    <button class="btn" id="bLogin">ENTRAR</button>
+  </section>
+
+  <!-- ===== Formulario ===== -->
+  <section id="panel" class="hidden">
+    <div class="card">
+      <div class="label">1. Título <small id="cTitle">0/65</small></div>
+      <input type="text" id="title" maxlength="65" placeholder="Ej: 📻 Especial ochentero esta noche">
+      <div class="chips" id="chipsTitle"></div>
+    </div>
+
+    <div class="card">
+      <div class="label">2. Mensaje <small id="cBody">0/240</small></div>
+      <textarea id="body" maxlength="240" placeholder="Ej: Desde las 22:00 los mejores éxitos de los 80. ¡Te esperamos!"></textarea>
+    </div>
+
+    <div class="card">
+      <div class="label">3. Imagen</div>
+      <div class="imgs" id="imgs">
+        <button class="opt sel" data-img="/img/aviso-general.jpg"><img src="img/aviso-general.jpg" alt=""><span>General</span></button>
+        <button class="opt" data-img="/img/aviso-especial.jpg"><img src="img/aviso-especial.jpg" alt=""><span>Especial</span></button>
+        <button class="opt" data-img="/img/aviso-envivo.jpg"><img src="img/aviso-envivo.jpg" alt=""><span>Al aire ahora</span></button>
+        <button class="opt" data-img=""><div class="none">🚫</div><span>Sin imagen</span></button>
+      </div>
+      <details id="custom">
+        <summary>Usar otra imagen (pegar enlace)</summary>
+        <div class="box">
+          <input type="url" id="imgUrl" placeholder="https://…/imagen.jpg" inputmode="url">
+          <div class="hint">Debe ser un enlace directo a una imagen JPG o PNG que empiece con <b>https://</b>. Ideal: horizontal (el doble de ancho que de alto). Si no se ve aquí abajo en la vista previa, tampoco se verá en los teléfonos.</div>
+        </div>
+      </details>
+    </div>
+
+    <div class="card">
+      <div class="label">Así lo verán los oyentes</div>
+      <div class="preview">
+        <div class="pv-head"><img src="img/icono.png" alt="">Radio Recuerdos Retro · ahora</div>
+        <div class="pv-title" id="pvTitle">Título del aviso</div>
+        <div class="pv-body" id="pvBody">Aquí va el mensaje.</div>
+        <img class="pv-img" id="pvImg" alt="">
+      </div>
+    </div>
+
+    <div class="msg err" id="formErr"></div>
+    <button class="btn" id="bSend" style="margin-top:6px">📣 ENVIAR AHORA</button>
+
+    <div class="card" style="margin-top:18px">
+      <div class="label">Últimos avisos enviados desde este teléfono</div>
+      <ul class="hist" id="hist"></ul>
+    </div>
+
+    <button class="link" id="bLogout">Salir</button>
+  </section>
+
+  <div class="foot">Los avisos llegan a todos los que tienen la app instalada, en pocos segundos o minutos.</div>
+</div>
+
+<!-- Confirmación / resultado -->
+<div class="modal" id="modal">
+  <div class="sheet" id="sheet"></div>
+</div>
+
+<script>
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  var KEY_PASS = "rrr_panel_clave", KEY_HIST = "rrr_panel_historial";
+  var clave = "";
+  var store = {
+    get: function(k){ try { return localStorage.getItem(k); } catch(e){ return null; } },
+    set: function(k,v){ try { localStorage.setItem(k,v); } catch(e){} },
+    del: function(k){ try { localStorage.removeItem(k); } catch(e){} }
+  };
+
+  /* ---------- Ideas rápidas para el título ---------- */
+  var ideas = ["📻 ¡Estamos al aire!", "⭐ Especial esta noche", "🎶 Clásicos de los 80 y 90", "🎉 ¡Concurso en vivo!", "🕺 Recuerdos Retro Discoteque"];
+  ideas.forEach(function(t){
+    var b = document.createElement("button");
+    b.className = "chip"; b.type = "button"; b.textContent = t;
+    b.onclick = function(){ $("title").value = t; update(); $("body").focus(); };
+    $("chipsTitle").appendChild(b);
+  });
+
+  /* ---------- Llamada al servidor ---------- */
+  function api(payload){
+    payload.clave = clave;
+    return fetch("/api/enviar", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    }).then(function(r){
+      return r.json().catch(function(){ return { ok:false, error:"Respuesta inválida del servidor." }; })
+        .then(function(d){ d.status = r.status; return d; });
+    }).catch(function(){ return { ok:false, error:"Sin conexión a internet. Revisa la señal e intenta de nuevo." }; });
+  }
+
+  /* ---------- Entrada ---------- */
+  function showPanel(){ $("login").classList.add("hidden"); $("panel").classList.remove("hidden"); renderHist(); update(); }
+  function login(){
+    var p = $("pass").value.trim();
+    if (!p) { err("loginErr", "Escribe la contraseña."); return; }
+    $("bLogin").disabled = true; $("bLogin").textContent = "REVISANDO…";
+    clave = p;
+    api({ soloVerificar:true }).then(function(d){
+      $("bLogin").disabled = false; $("bLogin").textContent = "ENTRAR";
+      if (d.ok) {
+        if ($("remember").checked) store.set(KEY_PASS, p); else store.del(KEY_PASS);
+        err("loginErr", ""); showPanel();
+      } else {
+        clave = "";
+        err("loginErr", d.error || "No se pudo entrar.");
+      }
+    });
+  }
+  $("bLogin").onclick = login;
+  $("pass").addEventListener("keydown", function(e){ if (e.key === "Enter") login(); });
+  $("bLogout").onclick = function(){ store.del(KEY_PASS); clave = ""; $("pass").value = ""; $("panel").classList.add("hidden"); $("login").classList.remove("hidden"); };
+
+  var saved = store.get(KEY_PASS);
+  if (saved) { clave = saved; showPanel(); }
+
+  /* ---------- Imagen ---------- */
+  var chosen = "/img/aviso-general.jpg";
+  Array.prototype.forEach.call(document.querySelectorAll(".opt"), function(o){
+    o.type = "button";
+    o.onclick = function(){
+      document.querySelectorAll(".opt").forEach(function(x){ x.classList.remove("sel"); });
+      o.classList.add("sel"); chosen = o.getAttribute("data-img");
+      $("imgUrl").value = ""; update();
+    };
+  });
+  $("imgUrl").addEventListener("input", function(){
+    if ($("imgUrl").value.trim()) document.querySelectorAll(".opt").forEach(function(x){ x.classList.remove("sel"); });
+    update();
+  });
+  function currentImage(){
+    var u = $("imgUrl").value.trim();
+    return u ? u : chosen;
+  }
+
+  /* ---------- Vista previa ---------- */
+  function update(){
+    var t = $("title").value, b = $("body").value, img = currentImage();
+    $("cTitle").textContent = t.length + "/65";
+    $("cBody").textContent = b.length + "/240";
+    $("pvTitle").textContent = t || "Título del aviso";
+    $("pvBody").textContent = b || "Aquí va el mensaje.";
+    var pv = $("pvImg");
+    if (img) { pv.style.display = "block"; pv.src = img.charAt(0) === "/" ? img.slice(1) : img; }
+    else { pv.style.display = "none"; pv.removeAttribute("src"); }
+  }
+  $("pvImg").onerror = function(){ if ($("imgUrl").value.trim()) err("formErr", "La imagen del enlace no se pudo cargar. Prueba con otro enlace o elige una imagen de las de arriba."); };
+  $("pvImg").onload = function(){ if ($("formErr").textContent.indexOf("imagen") >= 0) err("formErr", ""); };
+  $("title").addEventListener("input", update);
+  $("body").addEventListener("input", update);
+
+  /* ---------- Envío ---------- */
+  var modal = $("modal"), sheet = $("sheet");
+  function closeModal(){ modal.classList.remove("show"); }
+  modal.addEventListener("click", function(e){ if (e.target === modal && !sending) closeModal(); });
+  var sending = false;
+
+  $("bSend").onclick = function(){
+    var t = $("title").value.trim(), b = $("body").value.trim(), img = currentImage();
+    if (!t) { err("formErr", "Falta el título (paso 1)."); $("title").focus(); return; }
+    if (!b) { err("formErr", "Falta el mensaje (paso 2)."); $("body").focus(); return; }
+    if (img && img.charAt(0) !== "/" && !/^https:\/\//i.test(img)) { err("formErr", "El enlace de la imagen debe empezar con https://"); return; }
+    err("formErr", "");
+    sheet.innerHTML = '<h2>¿Enviar a todos?</h2><p>El aviso <b>"' + esc(t) + '"</b> llegará ahora a todos los oyentes que tienen la app.</p>' +
+      '<div class="row"><button class="btn alt" id="mNo">Cancelar</button><button class="btn" id="mYes">SÍ, ENVIAR</button></div>';
+    modal.classList.add("show");
+    $("mNo").onclick = closeModal;
+    $("mYes").onclick = function(){ send(t, b, img); };
+  };
+
+  function send(t, b, img){
+    sending = true;
+    sheet.innerHTML = '<div class="spin"></div><h2>Enviando…</h2><p>No cierres esta página.</p>';
+    api({ titulo:t, texto:b, imagen:img }).then(function(d){
+      sending = false;
+      if (d.ok) {
+        addHist({ t:t, b:b, at:Date.now() });
+        sheet.innerHTML = '<div class="big-ok">✅</div><h2>¡Aviso enviado!</h2><p>Llegará a los teléfonos en unos segundos o minutos.</p><button class="btn" id="mOk">LISTO</button>';
+        $("mOk").onclick = function(){ closeModal(); $("title").value = ""; $("body").value = ""; update(); window.scrollTo({ top:0, behavior:"smooth" }); };
+      } else {
+        if (d.status === 401) { store.del(KEY_PASS); }
+        sheet.innerHTML = '<div class="big-ok">⚠️</div><h2>No se envió</h2><p>' + esc(d.error || "Error desconocido.") + '</p><button class="btn alt" id="mOk">VOLVER</button>';
+        $("mOk").onclick = function(){
+          closeModal();
+          if (d.status === 401) { $("bLogout").onclick(); err("loginErr", "La contraseña cambió o es incorrecta. Vuelve a entrar."); }
+        };
+      }
+    });
+  }
+
+  /* ---------- Historial local ---------- */
+  function getHist(){ try { return JSON.parse(store.get(KEY_HIST) || "[]"); } catch(e){ return []; } }
+  function addHist(item){ var h = getHist(); h.unshift(item); store.set(KEY_HIST, JSON.stringify(h.slice(0, 10))); renderHist(); }
+  function renderHist(){
+    var h = getHist(), ul = $("hist");
+    if (!h.length) { ul.innerHTML = '<li class="empty">Todavía no has enviado avisos desde este teléfono.</li>'; return; }
+    ul.innerHTML = h.map(function(x){
+      var d = new Date(x.at);
+      var when = d.toLocaleDateString("es-CL", { day:"2-digit", month:"short" }) + " " + d.toLocaleTimeString("es-CL", { hour:"2-digit", minute:"2-digit" });
+      return '<li><div class="t"><b>' + esc(x.t) + '</b><span>' + esc(x.b) + '</span></div><time>' + when + '</time></li>';
+    }).join("");
+  }
+
+  function err(id, m){ var e = $(id); e.textContent = m; e.classList.toggle("show", !!m); }
+  function esc(s){ return String(s).replace(/[&<>"']/g, function(c){ return { "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]; }); }
+})();
+</script>
+</body>
+</html>
