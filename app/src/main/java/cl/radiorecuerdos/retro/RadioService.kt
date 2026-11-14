@@ -325,8 +325,11 @@ class RadioService : MediaSessionService() {
 
         if (panelArt == null) {
             val query = clean
+            // Si el "artista" es la propia radio, se busca solo por el título (ej. "Décadas Inolvidables").
+            val stationTag = parts.size == 2 && parts[0].lowercase().contains("recuerdos retro")
+            val term = if (stationTag) parts[1].trim() else clean.replace(" - ", " ")
             io.execute {
-                val found = searchCover(query)
+                val found = searchCover(term) ?: if (stationTag) searchCover(term, "album") else null
                 main.post {
                     if (rawTitle == query && !artFromPanel && found != null) {
                         artUrl = found
@@ -381,19 +384,23 @@ class RadioService : MediaSessionService() {
         return null
     }
 
-    private fun searchCover(query: String): String? {
-        return try {
-            val term = URLEncoder.encode(query.replace(" - ", " "), "UTF-8")
-            val body = httpGet("https://itunes.apple.com/search?term=$term&media=music&entity=song&limit=1")
-                ?: return null
-            val results = JSONObject(body).optJSONArray("results") ?: return null
-            if (results.length() == 0) return null
-            val a = results.getJSONObject(0).optString("artworkUrl100", "")
-            if (a.isBlank()) null else a.replace("100x100bb", "600x600bb")
-        } catch (e: Exception) {
-            null
+    /** Busca la carátula en iTunes: primero en la tienda de Chile y luego en la de EE.UU. */
+    private fun searchCover(term: String, entity: String = "song"): String? {
+        val q = try { URLEncoder.encode(term, "UTF-8") } catch (e: Exception) { return null }
+        for (country in listOf("CL", "US")) {
+            try {
+                val body = httpGet("https://itunes.apple.com/search?term=$q&media=music&entity=$entity&limit=1&country=$country")
+                    ?: continue
+                val results = JSONObject(body).optJSONArray("results") ?: continue
+                if (results.length() == 0) continue
+                val a = results.getJSONObject(0).optString("artworkUrl100", "")
+                if (a.isNotBlank()) return a.replace("100x100bb", "600x600bb")
+            } catch (_: Exception) {
+            }
         }
+        return null
     }
+
 
     private fun httpGet(url: String): String? {
         val c = URL(url).openConnection() as HttpURLConnection
