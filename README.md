@@ -25,3 +25,7 @@ Reproductor de la radio en vivo (clásicos de los 80 y 90) con estilo retro.
 La clave de la firma está guardada como secreto del repositorio (`FIRMA_CLAVE`, en Settings → Secrets and variables → Actions), no en el código.
 
 **No borrar `app/firma.jks` ni el secreto `FIRMA_CLAVE`**: es la firma fija. Gracias a ella las actualizaciones se instalan encima de la versión anterior.
+
+## Aviso de actualización
+
+Desde la versión 1.14, la app revisa en GitHub si hay una versión más nueva al abrirse o al volver a ella (como máximo cada 30 minutos). Si la hay, muestra un aviso abajo; **ACTUALIZAR** descarga la nueva versión dentro de la app, con barra de progreso, y abre el instalador de Android. La primera vez, Android pide autorizar que la app instale actualizaciones.
