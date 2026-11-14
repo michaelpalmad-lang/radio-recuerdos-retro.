@@ -169,8 +169,8 @@ class MainActivity : AppCompatActivity() {
         return "🎶 Estoy escuchando *$what*\n📻 en $STATION\nEscúchala tú también: $WEB"
     }
 
-    private fun coverBitmap(): Bitmap? {
-        val art = controller?.mediaMetadata?.artworkUri?.toString()
+    /** Descarga la carátula. Recibe la dirección ya leída en el hilo principal (el reproductor solo se consulta ahí). */
+    private fun coverBitmap(art: String?): Bitmap? {
         if (!art.isNullOrBlank() && art.startsWith("http")) {
             try {
                 val c = URL(art).openConnection() as HttpURLConnection
@@ -188,9 +188,10 @@ class MainActivity : AppCompatActivity() {
     private fun shareWithImage() {
         log("compartir_tema")
         val text = shareText()
+        val art = controller?.mediaMetadata?.artworkUri?.toString()
         io.execute {
             val uri = try {
-                val bmp = coverBitmap() ?: throw IllegalStateException()
+                val bmp = coverBitmap(art) ?: throw IllegalStateException()
                 val dir = File(cacheDir, "compartir").apply { mkdirs() }
                 val f = File(dir, "radio-recuerdos-retro.jpg")
                 FileOutputStream(f).use { bmp.compress(Bitmap.CompressFormat.JPEG, 90, it) }
