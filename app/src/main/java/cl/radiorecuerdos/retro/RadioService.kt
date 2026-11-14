@@ -323,13 +323,14 @@ class RadioService : MediaSessionService() {
         artFromPanel = panelArt != null
         refreshItem()
 
-        if (panelArt == null) {
+        // "Radio Recuerdos Retro - …" es una cuña o pisador de la radio: se muestra la carátula de la radio
+        // y no se busca en Apple (encontraría la portada de algún disco que no corresponde).
+        val jingle = parts.size == 2 && parts[0].lowercase().contains("recuerdos retro")
+        if (panelArt == null && !jingle) {
             val query = clean
-            // Si el "artista" es la propia radio, se busca solo por el título (ej. "Décadas Inolvidables").
-            val stationTag = parts.size == 2 && parts[0].lowercase().contains("recuerdos retro")
-            val term = if (stationTag) parts[1].trim() else clean.replace(" - ", " ")
+            val term = clean.replace(" - ", " ")
             io.execute {
-                val found = searchCover(term) ?: if (stationTag) searchCover(term, "album") else null
+                val found = searchCover(term)
                 main.post {
                     if (rawTitle == query && !artFromPanel && found != null) {
                         artUrl = found
