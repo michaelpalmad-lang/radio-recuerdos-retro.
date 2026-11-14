@@ -5,6 +5,8 @@ import android.annotation.SuppressLint
 import android.content.ComponentName
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.media.AudioManager
 import android.net.Uri
@@ -20,6 +22,7 @@ import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
 import androidx.media3.session.MediaController
@@ -27,6 +30,11 @@ import androidx.media3.session.SessionToken
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.firebase.analytics.FirebaseAnalytics
 import org.json.JSONObject
+import java.io.File
+import java.io.FileOutputStream
+import java.net.HttpURLConnection
+import java.net.URL
+import java.util.concurrent.Executors
 
 /**
  * Pantalla principal: la interfaz retro está en assets/index.html.
@@ -40,6 +48,15 @@ class MainActivity : AppCompatActivity() {
     private var controller: MediaController? = null
     private var pendingPlay = false
     private var pageReady = false
+    private val io = Executors.newSingleThreadExecutor()
+    private var latestBuild = 0L
+
+    companion object {
+        const val WEB = "https://recuerdosretro.com"
+        const val REPO_API = "https://api.github.com/repos/michaelpalmad-lang/radio-recuerdos-retro./releases/latest"
+        const val APK_URL = "https://github.com/michaelpalmad-lang/radio-recuerdos-retro./releases/latest/download/radio-recuerdos-retro.apk"
+        const val STATION = "Radio Recuerdos Retro"
+    }
 
     private fun log(event: String, params: Bundle? = null) {
         try { FirebaseAnalytics.getInstance(this).logEvent(event, params) } catch (_: Exception) {}
@@ -69,6 +86,7 @@ class MainActivity : AppCompatActivity() {
                 pushState()
                 pushVolume()
                 pushNotif()
+                pushUpdate()
             }
         }
         web.loadUrl("file:///android_asset/index.html")
@@ -89,6 +107,117 @@ class MainActivity : AppCompatActivity() {
 
         PushService.setup(this)
         connect()
+        checkUpdate()
+    }
+
+    // ---------- Aviso de actualización ----------
+
+    private val prefs by lazy { getSharedPreferences("app", MODE_PRIVATE) }
+
+    private fun installedBuild(): Long = try {
+        val pi = packageManager.getPackageInfo(packageName, 0)
+        if (Build.VERSION.SDK_INT >= 28) pi.longVersionCode else @Suppress("DEPRECATION") pi.versionCode.toLong()
+    } catch (_: Exception) { 0L }
+
+    /** Revisa en GitHub (como máximo cada 6 horas) si hay una versión publicada más nueva. */
+    private fun checkUpdate() {
+        latestBuild = prefs.getLong("latest", 0L)
+        val last = prefs.getLong("checkedAt", 0L)
+        if (System.currentTimeMillis() - last < 6 * 3600_000L) return
+        io.execute {
+            try {
+                val c = URL(REPO_API).openConnection() as HttpURLConnection
+                c.connectTimeout = 8000
+                c.readTimeout = 8000
+                c.setRequestProperty("Accept", "application/vnd.github+json")
+                c.setRequestProperty("User-Agent", "RadioRecuerdosRetro-Android")
+                val body = if (c.responseCode == 200) c.inputStream.bufferedReader().use { it.readText() } else null
+                c.disconnect()
+                val tag = body?.let { JSONObject(it).optString("tag_name", "") } ?: ""
+                // Las versiones se publican como v1.N, donde N es el número de compilación.
+                val n = Regex("""v?\d+\.(\d+)""").find(tag)?.groupValues?.get(1)?.toLongOrNull()
+                if (n != null) {
+                    prefs.edit().putLong("latest", n).putLong("checkedAt", System.currentTimeMillis()).apply()
+                    runOnUiThread { latestBuild = n; pushUpdate() }
+                }
+            } catch (_: Exception) {
+            }
+        }
+    }
+
+    /** Muestra el aviso solo si hay una versión más nueva que la instalada y no se cerró en las últimas 24 h. */
+    private fun pushUpdate() {
+        val installed = installedBuild()
+        val dismissedFor = prefs.getLong("dismissedFor", 0L)
+        val dismissedAt = prefs.getLong("dismissedAt", 0L)
+        val snoozed = dismissedFor == latestBuild && System.currentTimeMillis() - dismissedAt < 24 * 3600_000L
+        val show = latestBuild > installed && installed > 0 && !snoozed
+        js("window.onUpdate && window.onUpdate($show)")
+    }
+
+    // ---------- Compartir con imagen ----------
+
+    private fun shareText(): String {
+        val m = controller?.mediaMetadata
+        val title = m?.title?.toString()?.trim().orEmpty()
+        val artist = m?.artist?.toString()?.trim().orEmpty()
+        val what = when {
+            title.isEmpty() || title == STATION -> STATION
+            artist.isEmpty() || artist == RadioService.SLOGAN -> title
+            else -> "$title – $artist"
+        }
+        return "🎶 Estoy escuchando *$what*\n📻 en $STATION\nEscúchala tú también: $WEB"
+    }
+
+    private fun coverBitmap(): Bitmap? {
+        val art = controller?.mediaMetadata?.artworkUri?.toString()
+        if (!art.isNullOrBlank() && art.startsWith("http")) {
+            try {
+                val c = URL(art).openConnection() as HttpURLConnection
+                c.connectTimeout = 8000
+                c.readTimeout = 8000
+                val b = c.inputStream.use { BitmapFactory.decodeStream(it) }
+                c.disconnect()
+                if (b != null) return b
+            } catch (_: Exception) {
+            }
+        }
+        return try { BitmapFactory.decodeResource(resources, R.drawable.cover_default) } catch (_: Exception) { null }
+    }
+
+    private fun shareWithImage() {
+        log("compartir_tema")
+        val text = shareText()
+        io.execute {
+            val uri = try {
+                val bmp = coverBitmap() ?: throw IllegalStateException()
+                val dir = File(cacheDir, "compartir").apply { mkdirs() }
+                val f = File(dir, "radio-recuerdos-retro.jpg")
+                FileOutputStream(f).use { bmp.compress(Bitmap.CompressFormat.JPEG, 90, it) }
+                FileProvider.getUriForFile(this, "$packageName.archivos", f)
+            } catch (_: Exception) { null }
+            runOnUiThread {
+                val send = Intent(Intent.ACTION_SEND).apply {
+                    putExtra(Intent.EXTRA_TEXT, text)
+                    if (uri != null) {
+                        type = "image/jpeg"
+                        putExtra(Intent.EXTRA_STREAM, uri)
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    } else {
+                        type = "text/plain"
+                    }
+                }
+                try { startActivity(Intent.createChooser(send, "Compartir")) } catch (_: Exception) {}
+            }
+        }
+    }
+
+    private fun openUrl(url: String) {
+        try {
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        } catch (_: Exception) {
+            js("window.toastMsg && window.toastMsg('NO HAY NAVEGADOR EN ESTE EQUIPO')")
+        }
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
@@ -134,6 +263,7 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         controllerFuture?.let { MediaController.releaseFuture(it) }
         controller = null
+        io.shutdownNow()
         web.destroy()
         super.onDestroy()
     }
@@ -223,6 +353,27 @@ class MainActivity : AppCompatActivity() {
             try { startActivity(i) } catch (_: Exception) {
                 startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName")))
             }
+        }
+
+        @JavascriptInterface
+        fun shareNow() = runOnUiThread { shareWithImage() }
+
+        @JavascriptInterface
+        fun openWeb() = runOnUiThread {
+            log("abrir_web")
+            openUrl(WEB)
+        }
+
+        @JavascriptInterface
+        fun update() = runOnUiThread {
+            log("actualizar_app")
+            openUrl(APK_URL)
+        }
+
+        @JavascriptInterface
+        fun dismissUpdate() = runOnUiThread {
+            prefs.edit().putLong("dismissedFor", latestBuild).putLong("dismissedAt", System.currentTimeMillis()).apply()
+            pushUpdate()
         }
 
         @JavascriptInterface

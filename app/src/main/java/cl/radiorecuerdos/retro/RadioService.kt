@@ -311,7 +311,9 @@ class RadioService : MediaSessionService() {
         rawTitle = clean
         val parts = clean.split(" - ", limit = 2)
         if (parts.size == 2 && parts[0].isNotBlank() && parts[1].isNotBlank()) {
-            artist = parts[0].trim()
+            val a = parts[0].trim()
+            // "Radio Recuerdos Retro - Décadas Inolvidables": el nombre de la radio no es el artista.
+            artist = if (a.lowercase().contains("recuerdos retro")) SLOGAN else a
             title = parts[1].trim()
         } else {
             artist = SLOGAN

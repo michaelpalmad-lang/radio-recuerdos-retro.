@@ -44,6 +44,17 @@
             android:name="com.google.firebase.messaging.default_notification_color"
             android:resource="@color/rosa_neon" />
 
+        <!-- Para compartir la carátula como imagen -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.archivos"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/rutas" />
+        </provider>
+
         <service
             android:name=".PushService"
             android:exported="false">

@@ -199,6 +199,32 @@ button:focus{outline:none}
 button:focus-visible,input:focus-visible{outline:4px solid var(--yellow);outline-offset:6px;filter:drop-shadow(0 0 12px rgba(249,200,14,.8))}
 .big:focus-visible{outline-offset:10px}
 
+/* ===== Versión A: botón web, aviso de actualización y legibilidad ===== */
+.hr{display:flex;align-items:center;gap:10px}
+.web{width:48px;height:48px;border-radius:50%;border:2px solid var(--cyan);background:rgba(5,217,232,.12);box-shadow:3px 3px 0 var(--pink);display:grid;place-items:center;flex:none}
+.web svg{width:24px;height:24px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.web:active{transform:translate(3px,3px);box-shadow:none}
+.upd{position:fixed;left:12px;right:12px;bottom:calc(env(safe-area-inset-bottom) + 10px);z-index:21;display:none;align-items:center;gap:10px;
+  padding:7px 10px;background:#000;border:2px solid var(--cyan);box-shadow:4px 4px 0 var(--pink);font-family:var(--crt);font-size:21px;line-height:1.1}
+.upd.show{display:flex;animation:drop .35s ease-out}
+.upd span{flex:1}
+.upd b{display:block;font-family:var(--pixel);font-size:10px;color:var(--cyan);font-weight:normal;margin-bottom:4px;line-height:1.3}
+.upd .go{flex:none;font-family:var(--pixel);font-size:9px;padding:10px;background:var(--cyan);color:#120624;box-shadow:2px 2px 0 var(--pink)}
+.upd .x{flex:none;font-size:24px;color:var(--muted);padding:4px 6px}
+@media (orientation:landscape){.upd{left:50%;right:auto;transform:translateX(-50%);width:min(44vw,430px);top:2vh;bottom:auto}}
+body.has-upd .status{visibility:hidden}
+@media (orientation:landscape){body.has-upd .status{visibility:visible}}
+.now{font-size:11px}
+.artist{font-size:27px;color:#7ff3fb}
+.vol label{font-size:11px}
+.live{font-size:10px}
+.brand small{font-size:16px}
+.status{font-size:23px;color:#e2d6f5}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation:none !important;transition:none !important}
+  .marquee.run span{padding-left:0}
+}
+
 /* ===== Pantallas horizontales (radios de auto, tablets) ===== */
 @media (orientation:landscape){
   #intro .sun{width:56vh;height:56vh}
@@ -272,7 +298,7 @@ button:focus-visible,input:focus-visible{outline:4px solid var(--yellow);outline
 
   <header>
     <div class="brand">RADIO<small>Recuerdos Retro</small></div>
-    <div class="live" id="live"><i></i>EN VIVO</div>
+    <div class="hr"><button class="web" id="bWeb" aria-label="Página web recuerdosretro.com"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.8 3 2.8 15 0 18M12 3c-2.8 3-2.8 15 0 18"/></svg></button><div class="live" id="live"><i></i>EN VIVO</div></div>
   </header>
 
   <div class="stage">
@@ -319,6 +345,11 @@ button:focus-visible,input:focus-visible{outline:4px solid var(--yellow);outline
       <button data-m="60">1 hora</button><button data-m="90">1½ hora</button><button data-m="0" class="off">Quitar</button>
     </div>
   </div>
+</div>
+<div class="upd" id="upd">
+  <span><b>NUEVA VERSIÓN</b>Hay una actualización</span>
+  <button class="go" id="uGo">ACTUALIZAR</button>
+  <button class="x" id="uX" aria-label="Cerrar">✕</button>
 </div>
 <div class="notif" id="notif">
   <span>🔔 Activa los avisos de la radio</span>
@@ -465,8 +496,9 @@ button:focus-visible,input:focus-visible{outline:4px solid var(--yellow);outline
     var txt = state.title && state.title !== "Radio Recuerdos Retro"
       ? "🎶 Estoy escuchando \"" + state.title + "\"" + (state.artist ? " de " + state.artist : "") + " en Radio Recuerdos Retro 📻✨"
       : "📻✨ Escuchando Radio Recuerdos Retro: clásicos de los 80 y 90.";
-    if (A) A.share(txt);
+    if (A && A.shareNow) A.shareNow(); else if (A) A.share(txt);
   });
+  $("bWeb").addEventListener("click", function(){ if (A && A.openWeb) A.openWeb(); });
   var sheet = $("sheet");
   $("bSleep").addEventListener("click", function(e){
     sheet.classList.add("show");
@@ -522,6 +554,15 @@ button:focus-visible,input:focus-visible{outline:4px solid var(--yellow);outline
     });
     if (best) best.focus();
   });
+
+  /* ---------- Aviso de actualización (solo si hay versión nueva) ---------- */
+  var hasUpdate = false;
+  window.onUpdate = function(show){ hasUpdate = !!show; showUpd(); };
+  function showUpd(){ var on = hasUpdate && started; $("upd").classList.toggle("show", on); document.body.classList.toggle("has-upd", on); }
+  $("uGo").addEventListener("click", function(){ if (A && A.update) A.update(); });
+  $("uX").addEventListener("click", function(){ hasUpdate = false; showUpd(); if (A && A.dismissUpdate) A.dismissUpdate(); });
+  setInterval(showUpd, 1500);
+  window.toastMsg = function(m){ toast(m); };
 
   /* ---------- Aviso de notificaciones desactivadas ---------- */
   var notifOn = true, notifHidden = false;
