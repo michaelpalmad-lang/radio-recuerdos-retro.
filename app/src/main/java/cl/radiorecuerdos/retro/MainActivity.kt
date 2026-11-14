@@ -212,6 +212,94 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // ---------- Actualizar dentro de la app ----------
+
+    private var downloading = false
+    private var pendingApk: File? = null
+
+    private fun updState(state: String, pct: Int = 0) {
+        js("window.onUpdState && window.onUpdState('$state', $pct)")
+    }
+
+    /** Descarga la última versión con barra de progreso y abre el instalador de Android. */
+    private fun downloadUpdate() {
+        if (downloading) return
+        downloading = true
+        updState("progress", 0)
+        io.execute {
+            val dir = File(cacheDir, "actualizacion").apply { mkdirs() }
+            val f = File(dir, "radio-recuerdos-retro.apk")
+            val ok = try {
+                if (f.exists()) f.delete()
+                val c = URL(APK_URL).openConnection() as HttpURLConnection
+                c.instanceFollowRedirects = true
+                c.connectTimeout = 15000
+                c.readTimeout = 20000
+                c.setRequestProperty("User-Agent", "RadioRecuerdosRetro-Android")
+                if (c.responseCode !in 200..299) throw IllegalStateException("HTTP ${c.responseCode}")
+                val total = c.contentLengthLong
+                var done = 0L
+                var lastPct = -1
+                c.inputStream.use { input ->
+                    FileOutputStream(f).use { out ->
+                        val buf = ByteArray(64 * 1024)
+                        while (true) {
+                            val n = input.read(buf)
+                            if (n < 0) break
+                            out.write(buf, 0, n)
+                            done += n
+                            if (total > 0) {
+                                val pct = (done * 100 / total).toInt()
+                                if (pct != lastPct) {
+                                    lastPct = pct
+                                    runOnUiThread { updState("progress", pct) }
+                                }
+                            }
+                        }
+                    }
+                }
+                c.disconnect()
+                total <= 0 || done == total
+            } catch (_: Exception) {
+                false
+            }
+            runOnUiThread {
+                downloading = false
+                if (ok && f.length() > 100_000) {
+                    pendingApk = f
+                    updState("ready", 100)
+                    installPending()
+                } else {
+                    updState("error")
+                }
+            }
+        }
+    }
+
+    private fun installPending() {
+        val f = pendingApk ?: return
+        if (Build.VERSION.SDK_INT >= 26 && !packageManager.canRequestPackageInstalls()) {
+            // Primera vez: Android pide autorizar que esta app instale sus actualizaciones.
+            updState("permission")
+            try {
+                startActivity(Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:$packageName")))
+            } catch (_: Exception) {
+            }
+            return
+        }
+        try {
+            val uri = FileProvider.getUriForFile(this, "$packageName.archivos", f)
+            val i = Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(uri, "application/vnd.android.package-archive")
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            startActivity(i)
+            updState("installing", 100)
+        } catch (_: Exception) {
+            updState("error")
+        }
+    }
+
     private fun openUrl(url: String) {
         try {
             startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
@@ -254,6 +342,10 @@ class MainActivity : AppCompatActivity() {
         pushVolume()
         pushNotif()
         checkUpdate()
+        // Al volver de la pantalla de permiso, seguir con la instalación.
+        if (pendingApk != null && !downloading && Build.VERSION.SDK_INT >= 26 && packageManager.canRequestPackageInstalls()) {
+            installPending()
+        }
     }
 
     override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
@@ -368,7 +460,7 @@ class MainActivity : AppCompatActivity() {
         @JavascriptInterface
         fun update() = runOnUiThread {
             log("actualizar_app")
-            openUrl(APK_URL)
+            if (pendingApk != null && !downloading) installPending() else downloadUpdate()
         }
 
         @JavascriptInterface

@@ -211,6 +211,10 @@ button:focus-visible,input:focus-visible{outline:4px solid var(--yellow);outline
 .upd b{display:block;font-family:var(--pixel);font-size:10px;color:var(--cyan);font-weight:normal;margin-bottom:4px;line-height:1.3}
 .upd .go{flex:none;font-family:var(--pixel);font-size:9px;padding:10px;background:var(--cyan);color:#120624;box-shadow:2px 2px 0 var(--pink)}
 .upd .x{flex:none;font-size:24px;color:var(--muted);padding:4px 6px}
+.upd .bar2{display:none;height:12px;margin-top:6px;border:2px solid #fff;background:#0e041e}
+.upd .bar2 i{display:block;height:100%;width:0;background:repeating-linear-gradient(90deg,var(--lime) 0 8px,transparent 8px 10px);transition:width .2s}
+.upd.busy .bar2{display:block}
+.upd.busy .go,.upd.busy .x{display:none}
 @media (orientation:landscape){.upd{left:50%;right:auto;transform:translateX(-50%);width:min(44vw,430px);top:2vh;bottom:auto}}
 body.has-upd .status{visibility:hidden}
 @media (orientation:landscape){body.has-upd .status{visibility:visible}}
@@ -347,7 +351,7 @@ body.has-upd .status{visibility:hidden}
   </div>
 </div>
 <div class="upd" id="upd">
-  <span><b>NUEVA VERSIÓN</b>Hay una actualización</span>
+  <span><b id="uT">NUEVA VERSIÓN</b><span id="uM">Hay una actualización</span><span class="bar2"><i id="uBar"></i></span></span>
   <button class="go" id="uGo">ACTUALIZAR</button>
   <button class="x" id="uX" aria-label="Cerrar">✕</button>
 </div>
@@ -560,6 +564,16 @@ body.has-upd .status{visibility:hidden}
   window.onUpdate = function(show){ hasUpdate = !!show; showUpd(); };
   function showUpd(){ var on = hasUpdate && started; $("upd").classList.toggle("show", on); document.body.classList.toggle("has-upd", on); }
   $("uGo").addEventListener("click", function(){ if (A && A.update) A.update(); });
+  window.onUpdState = function(st, pct){
+    var u = $("upd");
+    hasUpdate = true; showUpd();
+    u.classList.toggle("busy", st === "progress" || st === "installing");
+    $("uBar").style.width = (pct || 0) + "%";
+    if (st === "progress") { $("uT").textContent = "DESCARGANDO " + pct + "%"; $("uM").textContent = "La radio sigue sonando"; }
+    else if (st === "installing" || st === "ready") { $("uT").textContent = "LISTO PARA INSTALAR"; $("uM").textContent = "Confirma en la ventana de Android"; u.classList.remove("busy"); $("uGo").textContent = "INSTALAR"; }
+    else if (st === "permission") { $("uT").textContent = "UN PASO MÁS"; $("uM").textContent = "Activa \"Permitir\" y vuelve aquí"; $("uGo").textContent = "INSTALAR"; }
+    else if (st === "error") { $("uT").textContent = "NO SE PUDO DESCARGAR"; $("uM").textContent = "Revisa tu conexión"; $("uGo").textContent = "REINTENTAR"; }
+  };
   $("uX").addEventListener("click", function(){ hasUpdate = false; showUpd(); if (A && A.dismissUpdate) A.dismissUpdate(); });
   setInterval(showUpd, 1500);
   window.toastMsg = function(m){ toast(m); };
