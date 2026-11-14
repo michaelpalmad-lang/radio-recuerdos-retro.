@@ -119,11 +119,11 @@ class MainActivity : AppCompatActivity() {
         if (Build.VERSION.SDK_INT >= 28) pi.longVersionCode else @Suppress("DEPRECATION") pi.versionCode.toLong()
     } catch (_: Exception) { 0L }
 
-    /** Revisa en GitHub (como máximo cada 6 horas) si hay una versión publicada más nueva. */
+    /** Revisa en GitHub (al abrir o volver a la app, como máximo cada 30 minutos) si hay una versión más nueva. */
     private fun checkUpdate() {
         latestBuild = prefs.getLong("latest", 0L)
         val last = prefs.getLong("checkedAt", 0L)
-        if (System.currentTimeMillis() - last < 6 * 3600_000L) return
+        if (System.currentTimeMillis() - last < 30 * 60_000L) return
         io.execute {
             try {
                 val c = URL(REPO_API).openConnection() as HttpURLConnection
@@ -253,6 +253,7 @@ class MainActivity : AppCompatActivity() {
         pushState()
         pushVolume()
         pushNotif()
+        checkUpdate()
     }
 
     override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
