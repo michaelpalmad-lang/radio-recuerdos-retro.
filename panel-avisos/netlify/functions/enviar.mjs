@@ -78,19 +78,25 @@ function safeEqual(a, b) {
   return x.length === y.length && crypto.timingSafeEqual(x, y);
 }
 
-export function buildMessage({ title, body, image }) {
+const WEB_LINK = "https://recuerdosretro.com";
+
+export function buildMessage({ title, body, image, site }) {
   const notification = { title, body };
   const androidNotification = { channel_id: CHANNEL, color: COLOR, default_sound: true };
+  const webNotification = { icon: `${site || ""}/img/icono-512.png`, badge: `${site || ""}/img/icono.png` };
   if (image) {
     notification.image = image;
     androidNotification.image = image;
+    webNotification.image = image;
   }
   return {
     message: {
       topic: TOPIC,
       notification,
       android: { priority: "high", notification: androidNotification },
-      data: { title, body, ...(image ? { image } : {}) },
+      // Suscriptores del sitio web (navegadores): al tocar el aviso se abre la web.
+      webpush: { headers: { Urgency: "high" }, notification: webNotification, fcm_options: { link: WEB_LINK } },
+      data: { title, body, link: WEB_LINK, ...(image ? { image } : {}) },
     },
   };
 }
@@ -139,7 +145,7 @@ export default async (req) => {
     const res = await fetch(`https://fcm.googleapis.com/v1/projects/${sa.project_id}/messages:send`, {
       method: "POST",
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify(buildMessage({ title, body, image })),
+      body: JSON.stringify(buildMessage({ title, body, image, site: process.env.URL || new URL(req.url).origin })),
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
