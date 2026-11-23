@@ -9,6 +9,7 @@
 // Variables de entorno: FIREBASE_SERVICE_ACCOUNT (la misma del envío de avisos).
 
 import crypto from "node:crypto";
+import { getStore } from "@netlify/blobs";
 
 const TOPIC = "todos";
 const ALLOWED = ["https://recuerdosretro.com", "https://www.recuerdosretro.com"];
@@ -61,6 +62,21 @@ async function getAccessToken() {
   return cachedToken.token;
 }
 
+// Contador de suscripciones (sin datos personales: solo una huella del token).
+// Cada dispositivo cuenta una vez; si vuelve a activar avisos no se suma de nuevo.
+async function contar(req, token) {
+  try {
+    const ua = req.headers.get("user-agent") || "";
+    const tipo = /iPhone|iPad|iPod/i.test(ua) ? "iphone" : "web";
+    const huella = crypto.createHash("sha256").update(token).digest("hex").slice(0, 32);
+    const store = getStore("suscripciones");
+    const clave = `${tipo}/${huella}`;
+    if (!(await store.get(clave))) await store.set(clave, new Date().toISOString().slice(0, 10));
+  } catch {
+    // El contador nunca debe impedir la suscripción.
+  }
+}
+
 export default async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors(req) });
   if (req.method !== "POST") return json(req, 405, { ok: false, error: "Método no permitido." });
@@ -85,6 +101,7 @@ export default async (req) => {
     const data = await res.json().catch(() => ({}));
     const r = data?.results?.[0] || {};
     if (!res.ok || r.error) return json(req, 502, { ok: false, error: r.error || data?.error || `Error ${res.status}` });
+    await contar(req, token);
     return json(req, 200, { ok: true });
   } catch (e) {
     return json(req, 500, { ok: false, error: e.message || "Error inesperado." });

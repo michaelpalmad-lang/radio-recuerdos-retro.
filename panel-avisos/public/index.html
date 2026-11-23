@@ -180,7 +180,7 @@ details .box{margin-top:10px}
     <button class="link" id="bLogout">Salir</button>
   </section>
 
-  <div class="foot">Los avisos llegan a todos los que tienen la app instalada, en pocos segundos o minutos.<br><span id="ver" style="opacity:.7">versión 1.0</span></div>
+  <div class="foot">Los avisos llegan a todos los que tienen la app instalada, en pocos segundos o minutos.<br><span id="ver" style="opacity:.7">versión 1.0</span><br><span id="subs" style="opacity:.7"></span></div>
 </div>
 
 <!-- Confirmación / resultado -->
@@ -222,7 +222,12 @@ details .box{margin-top:10px}
   }
 
   /* ---------- Entrada ---------- */
-  function showPanel(){ $("login").classList.add("hidden"); $("panel").classList.remove("hidden"); renderHist(); update(); }
+  function showPanel(){ $("login").classList.add("hidden"); $("panel").classList.remove("hidden"); renderHist(); update(); loadSubs(); }
+  function loadSubs(){
+    api({ estadisticas:true }).then(function(d){
+      if (d.ok && typeof d.web === "number") $("subs").textContent = "Web: " + d.web + " · iPhone: " + d.iphone;
+    });
+  }
   function login(){
     var p = $("pass").value.trim();
     if (!p) { err("loginErr", "Escribe la contraseña."); return; }

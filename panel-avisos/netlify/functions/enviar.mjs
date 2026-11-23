@@ -6,6 +6,7 @@
 //   PANEL_CLAVE               -> contraseña que usa el equipo para entrar al panel
 
 import crypto from "node:crypto";
+import { getStore } from "@netlify/blobs";
 
 const TOPIC = "todos";
 const CHANNEL = "avisos";
@@ -80,7 +81,30 @@ function safeEqual(a, b) {
 
 const WEB_LINK = "https://recuerdosretro.com";
 
+// Enlace del aviso con etiqueta de campaña: así Google Analytics muestra
+// cuántas visitas trajo cada aviso (Adquisición > Campañas: "aviso-AAAA-MM-DD-titulo").
+export function campaignLink(title, date = new Date()) {
+  const dia = new Date(date.getTime() - 3 * 3600 * 1000).toISOString().slice(0, 10); // hora de Chile aprox.
+  const slug = String(title || "")
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40);
+  const campaign = `aviso-${dia}${slug ? "-" + slug : ""}`;
+  return `${WEB_LINK}/?utm_source=aviso&utm_medium=push&utm_campaign=${encodeURIComponent(campaign)}`;
+}
+
+async function contarSuscripciones() {
+  const store = getStore("suscripciones");
+  const contar = async (prefix) => {
+    let n = 0;
+    for await (const page of store.list({ prefix, paginate: true })) n += page.blobs.length;
+    return n;
+  };
+  const [web, iphone] = await Promise.all([contar("web/"), contar("iphone/")]);
+  return { web, iphone };
+}
+
 export function buildMessage({ title, body, image, site }) {
+  const link = campaignLink(title);
   const notification = { title, body };
   const androidNotification = { channel_id: CHANNEL, color: COLOR, default_sound: true };
   const webNotification = { icon: `${site || ""}/img/icono-512.png`, badge: `${site || ""}/img/icono.png` };
@@ -95,8 +119,8 @@ export function buildMessage({ title, body, image, site }) {
       notification,
       android: { priority: "high", notification: androidNotification },
       // Suscriptores del sitio web (navegadores): al tocar el aviso se abre la web.
-      webpush: { headers: { Urgency: "high" }, notification: webNotification, fcm_options: { link: WEB_LINK } },
-      data: { title, body, link: WEB_LINK, ...(image ? { image } : {}) },
+      webpush: { headers: { Urgency: "high" }, notification: webNotification, fcm_options: { link } },
+      data: { title, body, link, ...(image ? { image } : {}) },
     },
   };
 }
@@ -121,6 +145,15 @@ export default async (req) => {
 
   // Solo verificar la contraseña (pantalla de entrada).
   if (input.soloVerificar) return json(200, { ok: true });
+
+  // Contador de suscripciones de la web y del iPhone.
+  if (input.estadisticas) {
+    try {
+      return json(200, { ok: true, ...(await contarSuscripciones()) });
+    } catch (e) {
+      return json(500, { ok: false, error: "No se pudo leer el contador." });
+    }
+  }
 
   const title = String(input.titulo || "").trim().slice(0, 65);
   const body = String(input.texto || "").trim().slice(0, 240);
